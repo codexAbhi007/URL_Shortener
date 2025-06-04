@@ -21,8 +21,8 @@ export const shortenURL = async (req, res) => {
       return res.status(409).json({ message: "URL already exists", shortCode: existingUrl.shortCode });
     }
 
-
-    let shortCode = customCode || generateShortCode(6);
+  const normalizedCustomCode = customCode && customCode.trim() !== "" ? customCode.trim() : null;
+    let shortCode = normalizedCustomCode || generateShortCode(6);
 
     let exists = await URL.findOne({ shortCode });
     while (!customCode && exists) {
