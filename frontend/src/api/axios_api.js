@@ -6,4 +6,5 @@ const API = axios.create({
 });
 
 export const shortenUrl = (data) => API.post('/shorten', data);
+export const getAllShortLinks = () => API.get('/shorten/view'); // 
 export const getOriginalUrl = (code) => API.get(`/shorten/${code}`);

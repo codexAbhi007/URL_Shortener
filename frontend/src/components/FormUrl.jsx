@@ -24,7 +24,7 @@ const FormUrl = () => {
         originalUrl,
         customCode,
       });
-      const url = `http://localhost:${PORT}/shorten/${res.data.shortCode}`;
+      const url = `http://localhost:3000/shorten/${res.data.shortCode}`;
       setMessage(`Short URL created: ${url}`);
       setMessageType("success");
       setShortUrl(url);
@@ -64,7 +64,7 @@ const FormUrl = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 mt-10 w-full max-w-md">
+    <form onSubmit={handleSubmit} className="space-y-8 mt-10 w-full max-w-md mx-auto">
       {message && (
         <div
           className={`p-3 rounded text-center mb-2 flex flex-col items-center gap-2 ${
@@ -73,8 +73,8 @@ const FormUrl = () => {
               : "bg-red-100 text-red-700 border border-red-300"
           }`}
         >
-          <div className="flex items-center justify-center gap-2">
-            <span>{message}</span>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <span className="break-all">{message}</span>
             {messageType === "success" && shortUrl && (
               <>
                 <button
@@ -85,7 +85,6 @@ const FormUrl = () => {
                 >
                   <FiCopy size={20} />
                 </button>
-                
                 <a
                   href={shortUrl}
                   target="_blank"
