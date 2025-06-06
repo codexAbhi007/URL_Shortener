@@ -43,11 +43,23 @@ const Header = () => {
         >
           Views
         </Link>
+        <Link
+          to="/app/register"
+          className="text-white text-lg px-4 py-2 rounded hover:bg-gray-700 transition"
+        >
+          Sign Up
+        </Link>
+        <Link
+          to="/app/login"
+          className="text-white text-lg px-4 py-2 rounded hover:bg-gray-700 transition"
+        >
+          Sign In
+        </Link>
       </nav>
       {/* Mobile Nav */}
-      <nav
+ <nav
         className={`md:hidden absolute top-full left-0 w-full bg-gray-800 z-50 transition-all duration-300 overflow-hidden ${
-          menuOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+          menuOpen ? "max-h-60 opacity-100" : "max-h-0 opacity-0"
         }`}
         style={{ boxShadow: menuOpen ? "0 4px 12px rgba(0,0,0,0.15)" : "none" }}
       >
@@ -65,6 +77,20 @@ const Header = () => {
             onClick={() => setMenuOpen(false)}
           >
             Views
+          </Link>
+          <Link
+            to="/app/register"
+            className="text-white text-lg px-4 py-2 rounded hover:bg-gray-700 transition"
+            onClick={() => setMenuOpen(false)}
+          >
+            Sign Up
+          </Link>
+          <Link
+            to="/app/login"
+            className="text-white text-lg px-4 py-2 rounded hover:bg-gray-700 transition"
+            onClick={() => setMenuOpen(false)}
+          >
+            Sign In
           </Link>
         </div>
       </nav>

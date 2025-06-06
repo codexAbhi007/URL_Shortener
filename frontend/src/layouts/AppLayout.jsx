@@ -4,11 +4,11 @@ import Footer from "../UI/Footer.jsx"
 
 const AppLayout = () => {
   return (
-    <>
+    <div className="h-screen flex flex-col ">
        <Header/>
        <Outlet/>
        <Footer/> 
-    </>
+    </div>
   )
 }
 export default AppLayout

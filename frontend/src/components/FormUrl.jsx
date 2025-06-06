@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
-import axios from "axios";
 import { FiCopy, FiExternalLink } from "react-icons/fi";
 import { QRCodeCanvas } from "qrcode.react";
+import { shortenUrl } from "../api/axios_api";
 
 const FormUrl = () => {
   const [originalUrl, setOriginalUrl] = useState("");
@@ -20,11 +20,8 @@ const FormUrl = () => {
     setMessageType("");
     setShortUrl("");
     try {
-      const res = await axios.post(`http://localhost:${PORT}/shorten`, {
-        originalUrl,
-        customCode,
-      });
-      const url = `http://localhost:3000/shorten/${res.data.shortCode}`;
+      const res = await shortenUrl({originalUrl,customCode});
+      const url = `http://localhost:${PORT}/shorten/${res.data.shortCode}`;
       setMessage(`Short URL created: ${url}`);
       setMessageType("success");
       setShortUrl(url);
@@ -32,7 +29,10 @@ const FormUrl = () => {
       if (err.response) {
         if (err.response.data.message) {
           setMessage(err.response.data.message);
-        } else if (err.response.data.errors && err.response.data.errors.length > 0) {
+        } else if (
+          err.response.data.errors &&
+          err.response.data.errors.length > 0
+        ) {
           setMessage(err.response.data.errors[0].message);
         } else {
           setMessage("An error occurred.");
@@ -64,7 +64,10 @@ const FormUrl = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 mt-10 w-full max-w-md mx-auto">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-8 mt-10 w-full max-w-md mx-auto"
+    >
       {message && (
         <div
           className={`p-3 rounded text-center mb-2 flex flex-col items-center gap-2 ${
