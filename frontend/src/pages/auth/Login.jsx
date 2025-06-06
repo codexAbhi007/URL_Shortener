@@ -8,27 +8,23 @@ const Login = () => {
   const [form, setForm] = useState({
     email: "",
     password: "",
-    remember: false,
   });
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
   };
 
-  const handleSubmit = async(e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     console.log(form);
-    const response = await axios.post("http://localhost:3000/app/login",{
-      email: "test@example.com",
-      password: "12345"
-    })
-    console.log(response.data)
-     // Log form data on submit
+    const response = await axios.post("http://localhost:3000/app/login", form);
+    console.log(response.data);
+    console.log("form submitted");
     // Handle login logic here
   };
 
@@ -75,18 +71,6 @@ const Login = () => {
                 Forgot password?
               </Link>
             </div>
-          </div>
-          <div className="mb-4 flex items-center">
-            <input
-              type="checkbox"
-              name="remember"
-              checked={form.remember}
-              onChange={handleChange}
-              className="mr-2"
-            />
-            <label htmlFor="remember" className="text-sm">
-              Remember me
-            </label>
           </div>
           <button
             type="submit"
