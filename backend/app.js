@@ -9,13 +9,17 @@ import cookieParser from "cookie-parser";
 
 const app = express()
 
-app.use(cors());
+app.use(
+  cors({
+    origin: [process.env.FRONTEND_URL],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 
+app.use(cookieParser())
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json());
-app.use(cookieParser())
 app.use('/shorten',urlRoutes)
-
-
 app.use('/app',authRoutes)
 export default app;

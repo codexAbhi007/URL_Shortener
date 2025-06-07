@@ -22,7 +22,7 @@ export const postRegister = async (req, res) => {
   }
 
   const generatedHash = await AuthService.generateHash(password);
-  console.log(generatedHash)
+  console.log(generatedHash);
   const [user] = await AuthService.createUser({
     username,
     email,
@@ -35,40 +35,65 @@ export const postRegister = async (req, res) => {
 
 export const postLogin = async (req, res) => {
   // res.setHeader("Set-Cookie","")
-  
+
   // console.log(req.body);
   const { email, password } = req.body;
   const user = await AuthService.getUserByEmail(email);
   // console.log(user);
   if (!user) {
     return res
-    .status(409)
-    .json({ message: "User does not Exists! Register First" });
+      .status(409)
+      .json({ message: "User does not Exists! Register First" });
   }
-  
-  const compare = await AuthService.comparePass(password, user.password)
-  
+
+  const compare = await AuthService.comparePass(password, user.password);
+
   if (!compare) {
     return res.status(401).json({ message: "Invalid password." });
   }
-  
+
   // res.cookie("isLoggedIn", "true");
 
   const token = AuthService.generateToken({
-    id:user.id,
-    username:user.username,
-    email:user.email
-  })
-  res.cookie("access_token",token)
-  return res.status(200).json({
-    message: "Login successful",
-    user: {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-    },
+    id: user.id,
+    username: user.username,
+    email: user.email,
   });
+
+  return res
+    .status(200)
+    .cookie("access_token", token, {
+      expires: new Date(
+        Date.now() + process.env.COOKIE_EXPIRE * 24 * 60 * 60 * 1000
+      ),
+      httpOnly: true,
+    })
+    .json({
+      message: "Login successful",
+      token,
+      user,
+    });
+  // res.cookie("access_token",token,{
+  //   httpOnly: true,
+  //   secure: process.env.NODE_ENV === "production",
+  //   sameSite: "strict",
+  //   maxAge: 3600000
+  // })
 };
+
+export const logout =async(req, res)=>{
+    res
+    .status(200)
+    .cookie("access_token", "", {
+      expires: new Date(Date.now()),
+      httpOnly: true,
+    })
+    .json({
+      success: true,
+      message: "Logged Out Successfully",
+    });
+}
+
 
 
 // controllers/auth.controller.js
@@ -79,4 +104,3 @@ export const getProfile = (req, res) => {
     user: { id, username, email },
   });
 };
-

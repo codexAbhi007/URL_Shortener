@@ -1,10 +1,11 @@
 import express from "express";
-import { getLoginPage, getProfile, getRegisterPage,postLogin,postRegister } from "../controllers/authController.js";
+import { getLoginPage, getProfile, getRegisterPage,logout,postLogin,postRegister } from "../controllers/authController.js";
 import { verifyAuthentication } from "../middlewares/verify-auth-middleware.js";
 
 const router= express.Router()
 
-router.route("/register").get(getRegisterPage).post(postRegister);
-router.route("/login").get(getLoginPage).post(postLogin)
+router.route("/register").post(postRegister);
+router.route("/login").post(postLogin)
+router.get("/logout",verifyAuthentication,logout)
 router.get("/profile",verifyAuthentication,getProfile);
 export const authRoutes= router
