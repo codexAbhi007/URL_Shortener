@@ -1,12 +1,15 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useContext, useState } from "react";
+import Context from "../Context";
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { isAuthenticated } = useContext(Context);
 
   return (
     <header className="bg-gray-800 text-white py-4 px-4 md:px-8 flex items-center justify-between relative">
       <span className="text-2xl tracking-wider font-bold">URL Shortener</span>
+
       {/* Hamburger Icon */}
       <button
         className="md:hidden flex flex-col justify-center items-center w-10 h-10"
@@ -29,6 +32,7 @@ const Header = () => {
           }`}
         ></span>
       </button>
+
       {/* Desktop Nav */}
       <nav className="hidden md:flex gap-4">
         <Link
@@ -43,21 +47,34 @@ const Header = () => {
         >
           Views
         </Link>
-        <Link
-          to="/app/register"
-          className="text-white text-lg px-4 py-2 rounded hover:bg-gray-700 transition"
-        >
-          Sign Up
-        </Link>
-        <Link
-          to="/app/login"
-          className="text-white text-lg px-4 py-2 rounded hover:bg-gray-700 transition"
-        >
-          Sign In
-        </Link>
+
+        {!isAuthenticated ? (
+          <>
+            <Link
+              to="/app/register"
+              className="text-white text-lg px-4 py-2 rounded hover:bg-gray-700 transition"
+            >
+              Sign Up
+            </Link>
+            <Link
+              to="/app/login"
+              className="text-white text-lg px-4 py-2 rounded hover:bg-gray-700 transition"
+            >
+              Sign In
+            </Link>
+          </>
+        ) : (
+          <Link
+            to="/app/profile"
+            className="text-white text-lg px-4 py-2 rounded hover:bg-gray-700 transition"
+          >
+            My Profile
+          </Link>
+        )}
       </nav>
+
       {/* Mobile Nav */}
- <nav
+      <nav
         className={`md:hidden absolute top-full left-0 w-full bg-gray-800 z-50 transition-all duration-300 overflow-hidden ${
           menuOpen ? "max-h-60 opacity-100" : "max-h-0 opacity-0"
         }`}
@@ -78,20 +95,33 @@ const Header = () => {
           >
             Views
           </Link>
-          <Link
-            to="/app/register"
-            className="text-white text-lg px-4 py-2 rounded hover:bg-gray-700 transition"
-            onClick={() => setMenuOpen(false)}
-          >
-            Sign Up
-          </Link>
-          <Link
-            to="/app/login"
-            className="text-white text-lg px-4 py-2 rounded hover:bg-gray-700 transition"
-            onClick={() => setMenuOpen(false)}
-          >
-            Sign In
-          </Link>
+
+          {!isAuthenticated ? (
+            <>
+              <Link
+                to="/app/register"
+                className="text-white text-lg px-4 py-2 rounded hover:bg-gray-700 transition"
+                onClick={() => setMenuOpen(false)}
+              >
+                Sign Up
+              </Link>
+              <Link
+                to="/app/login"
+                className="text-white text-lg px-4 py-2 rounded hover:bg-gray-700 transition"
+                onClick={() => setMenuOpen(false)}
+              >
+                Sign In
+              </Link>
+            </>
+          ) : (
+            <Link
+              to="/app/profile"
+              className="text-white text-lg px-4 py-2 rounded hover:bg-gray-700 transition"
+              onClick={() => setMenuOpen(false)}
+            >
+              My Profile
+            </Link>
+          )}
         </div>
       </nav>
     </header>

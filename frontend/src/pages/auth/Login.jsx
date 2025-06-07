@@ -1,17 +1,25 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useContext, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { MdLogin } from "react-icons/md";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-import axios from "axios";
+
+import { postLogin } from "../../api/axios_api";
+import Context from "../../Context";
 
 const Login = () => {
+  const { setIsAuthenticated, setUser } = useContext(Context);
+  const navigateTo = useNavigate();
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [form, setForm] = useState({
     email: "",
     password: "",
   });
+
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
+    setError("");
     const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
@@ -21,10 +29,26 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(form);
-    const response = await axios.post("http://localhost:3000/app/login", form);
-    console.log(response.data);
-    console.log("form submitted");
+    try {
+      const res = await postLogin(form);
+      console.log(res.data);
+
+      if (res.status === 200 || res.data.success) {
+        setSuccess("Account Login successfully!");
+        setForm({ email: "", password: "" });
+        setIsAuthenticated(true)
+        setUser(res.data.user)
+        navigateTo("/app/profile")
+        // setAgree(false);
+      }
+    } catch (err) {
+      console.log(err);
+      setError(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Login failed. Try again."
+      );
+    }
     // Handle login logic here
   };
 
@@ -32,6 +56,12 @@ const Login = () => {
     <div className="flex flex-1 items-center justify-center bg-gray-100">
       <div className="w-full max-w-md bg-blue-100 p-8 rounded-lg shadow-md ">
         <h2 className="text-2xl font-bold text-center mb-6">Sign In</h2>
+
+        {error && <p className="text-red-600 text-center mb-4">{error}</p>}
+        {success && (
+          <p className="text-green-600 text-center mb-4">{success}</p>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block mb-1 font-medium">
@@ -67,7 +97,10 @@ const Login = () => {
               </button>
             </label>
             <div className="text-right mt-1">
-              <Link to="/forgot-password" className="text-blue-600 text-sm hover:underline">
+              <Link
+                to="/forgot-password"
+                className="text-blue-600 text-sm hover:underline"
+              >
                 Forgot password?
               </Link>
             </div>
