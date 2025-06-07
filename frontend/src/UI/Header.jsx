@@ -7,7 +7,7 @@ const Header = () => {
   const { isAuthenticated } = useContext(Context);
 
   return (
-    <header className="bg-gray-800 text-white py-4 px-4 md:px-8 flex items-center justify-between relative">
+    <header className="bg-gray-800 text-white p-4 md:px-8 flex items-center justify-between relative">
       <span className="text-2xl tracking-wider font-bold">URL Shortener</span>
 
       {/* Hamburger Icon */}

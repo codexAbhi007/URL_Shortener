@@ -2,22 +2,28 @@ import React, { useEffect, useState, useContext } from "react";
 import { getProfile, logoutUser } from "../../api/axios_api";
 import Context from "../../Context";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const Profile = () => {
   const [user, setUser] = useState(null);
-  const [error, setError] = useState("");
   const { setIsAuthenticated, setUser: setGlobalUser } = useContext(Context);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const res = await getProfile();
-        setUser(res.data.user);
+        if (res.status === 200) {
+          setUser(res.data.user);
+          toast.success("Welcome to Profile Page", { id: "profile-toast" });
+        }
+      // eslint-disable-next-line no-unused-vars
       } catch (err) {
-        setError(
-          err.response?.data?.message || err.message || "Failed to fetch profile"
-        );
+        toast.error("Please Login to Access", { id: "auth-error" });
+        navigate("/app/login");
+      } finally {
+        setLoading(false);
       }
     };
     fetchProfile();
@@ -29,39 +35,49 @@ const Profile = () => {
       setUser(null);
       setGlobalUser(null);
       setIsAuthenticated(false);
+      toast.success("Logged out successfully");
       navigate("/app/login");
     } catch (err) {
-      alert("Logout failed: " + (err.response?.data?.message || err.message));
+      toast.error(
+        err.response?.data?.message || err.message || "Logout failed"
+      );
     }
   };
 
-  if (error)
-    return <p className="text-red-500 text-center mt-8 text-lg">{error}</p>;
-  if (!user) return <p className="text-center mt-8 text-lg">Loading profile...</p>;
+  if (loading) {
+    return (
+      <div className="grid place-items-center">
+        <div className="loader"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-md mx-auto mt-10 bg-white shadow-xl rounded-lg p-6 border border-gray-200">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">👤 Your Profile</h2>
-        <button
-          onClick={handleLogout}
-          className="bg-red-500 hover:bg-red-600 text-white text-sm px-4 py-2 rounded transition"
-        >
-          Logout
-        </button>
-      </div>
-      <div className="space-y-4">
-        <div>
-          <p className="text-gray-600 text-sm">Username</p>
-          <p className="text-lg font-medium text-gray-900">{user.username}</p>
+    <div className="grid place-items-center min-h-[70vh] px-4">
+      <div className="w-full max-w-md bg-white shadow-xl rounded-lg p-6 border border-gray-200">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">👤 Your Profile</h2>
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 hover:bg-red-900 hover:cursor-pointer text-white text-sm px-4 py-2 rounded transition"
+          >
+            Logout
+          </button>
         </div>
-        <div>
-          <p className="text-gray-600 text-sm">Email</p>
-          <p className="text-lg font-medium text-gray-900">{user.email}</p>
-        </div>
-        <div>
-          <p className="text-gray-600 text-sm">User ID</p>
-          <p className="text-lg font-medium text-gray-900">{user.id}</p>
+
+        <div className="space-y-4">
+          <div>
+            <p className="text-gray-600 text-sm">Username</p>
+            <p className="text-lg font-medium text-gray-900">{user.username}</p>
+          </div>
+          <div>
+            <p className="text-gray-600 text-sm">Email</p>
+            <p className="text-lg font-medium text-gray-900">{user.email}</p>
+          </div>
+          <div>
+            <p className="text-gray-600 text-sm">User ID</p>
+            <p className="text-lg font-medium text-gray-900">{user.id}</p>
+          </div>
         </div>
       </div>
     </div>
