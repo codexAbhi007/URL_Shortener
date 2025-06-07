@@ -1,42 +1,88 @@
+import { z } from "zod";
+import {
+  usernameSchema,
+  emailSchema,
+  passwordSchema,
+} from "../models/zodPassSchema.js";
 import * as AuthService from "../services/auth.services.js";
 
-export const getRegisterPage = (req, res) => {
-  console.log("Register");
-};
+// export const postRegister = async (req, res) => {
+//   console.log(req.body);
+//   const { username, email, password } = req.body;
 
-export const getLoginPage = (req, res) => {
-  console.log("Login");
-};
+//   const userExists = await AuthService.getUserByEmail(email);
+//   console.log(userExists);
+
+//   if (userExists) {
+//     return res
+//       .status(409)
+//       .json({ message: "User already exists! Sign In Instead" });
+//   }
+
+//   const generatedHash = await AuthService.generateHash(password);
+//   console.log(generatedHash);
+//   const [user] = await AuthService.createUser({
+//     username,
+//     email,
+//     password: generatedHash,
+//   });
+//   console.log(user);
+
+//   return res.status(201).json({ message: "Registration successful", user });
+// };
 
 export const postRegister = async (req, res) => {
-  console.log(req.body);
-  const { username, email, password } = req.body;
+  try {
+    const { username, email, password } = req.body;
 
-  const userExists = await AuthService.getUserByEmail(email);
-  console.log(userExists);
+    // Step-by-step validation with Zod
+    const usernameResult = usernameSchema.safeParse(username);
+    if (!usernameResult.success) {
+      return res
+        .status(400)
+        .json({ message: usernameResult.error.errors[0].message });
+    }
 
-  if (userExists) {
-    return res
-      .status(409)
-      .json({ message: "User already exists! Sign In Instead" });
+    const emailResult = emailSchema.safeParse(email);
+    if (!emailResult.success) {
+      return res
+        .status(400)
+        .json({ message: emailResult.error.errors[0].message });
+    }
+
+    const passwordResult = passwordSchema.safeParse(password);
+    if (!passwordResult.success) {
+      return res
+        .status(400)
+        .json({ message: passwordResult.error.errors[0].message });
+    }
+
+    // Check if user already exists
+    const userExists = await AuthService.getUserByEmail(email);
+    if (userExists) {
+      return res
+        .status(409)
+        .json({ message: "User already exists! Sign In instead." });
+    }
+
+    // Create user
+    const hashedPassword = await AuthService.generateHash(password);
+    const [user] = await AuthService.createUser({
+      username,
+      email,
+      password: hashedPassword,
+    });
+
+    return res.status(201).json({ message: "Registration successful", user });
+  } catch (error) {
+    console.error("Registration error:", error);
+    return res.status(500).json({
+      message: "Something went wrong while registering. Please try again.",
+    });
   }
-
-  const generatedHash = await AuthService.generateHash(password);
-  console.log(generatedHash);
-  const [user] = await AuthService.createUser({
-    username,
-    email,
-    password: generatedHash,
-  });
-  console.log(user);
-
-  return res.status(201).json({ message: "Registration successful", user });
 };
 
 export const postLogin = async (req, res) => {
-  // res.setHeader("Set-Cookie","")
-
-  // console.log(req.body);
   const { email, password } = req.body;
   const user = await AuthService.getUserByEmail(email);
   // console.log(user);
@@ -49,7 +95,7 @@ export const postLogin = async (req, res) => {
   const compare = await AuthService.comparePass(password, user.password);
 
   if (!compare) {
-    return res.status(401).json({ message: "Invalid password." });
+    return res.status(401).json({ message: "Invalid password" });
   }
 
   // res.cookie("isLoggedIn", "true");
@@ -61,7 +107,7 @@ export const postLogin = async (req, res) => {
   });
 
   return res
-    .status(200)
+    .status(201)
     .cookie("access_token", token, {
       expires: new Date(
         Date.now() + process.env.COOKIE_EXPIRE * 24 * 60 * 60 * 1000
@@ -81,8 +127,8 @@ export const postLogin = async (req, res) => {
   // })
 };
 
-export const logout =async(req, res)=>{
-    res
+export const logout = async (req, res) => {
+  res
     .status(200)
     .cookie("access_token", "", {
       expires: new Date(Date.now()),
@@ -92,9 +138,7 @@ export const logout =async(req, res)=>{
       success: true,
       message: "Logged Out Successfully",
     });
-}
-
-
+};
 
 // controllers/auth.controller.js
 export const getProfile = (req, res) => {

@@ -1,5 +1,5 @@
 import express from "express";
-import { getLoginPage, getProfile, getRegisterPage,logout,postLogin,postRegister } from "../controllers/authController.js";
+import {  getProfile, logout,postLogin,postRegister } from "../controllers/authController.js";
 import { verifyAuthentication } from "../middlewares/verify-auth-middleware.js";
 
 const router= express.Router()
