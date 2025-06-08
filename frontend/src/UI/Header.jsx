@@ -41,12 +41,15 @@ const Header = () => {
         >
           Home
         </Link>
-        <Link
-          to="/shorten/view"
-          className="text-white text-lg px-4 py-2 rounded hover:bg-gray-700 transition"
-        >
-          Views
-        </Link>
+
+        {isAuthenticated && (
+          <Link
+            to="/shorten/view"
+            className="text-white text-lg px-4 py-2 rounded hover:bg-gray-700 transition"
+          >
+            Views
+          </Link>
+        )}
 
         {!isAuthenticated ? (
           <>
@@ -88,13 +91,16 @@ const Header = () => {
           >
             Home
           </Link>
-          <Link
-            to="/shorten/view"
-            className="text-white text-lg px-4 py-2 rounded hover:bg-gray-700 transition"
-            onClick={() => setMenuOpen(false)}
-          >
-            Views
-          </Link>
+
+          {isAuthenticated && (
+            <Link
+              to="/shorten/view"
+              className="text-white text-lg px-4 py-2 rounded hover:bg-gray-700 transition"
+              onClick={() => setMenuOpen(false)}
+            >
+              Views
+            </Link>
+          )}
 
           {!isAuthenticated ? (
             <>
