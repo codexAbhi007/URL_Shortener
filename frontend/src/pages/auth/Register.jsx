@@ -1,13 +1,14 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { MdLogin } from "react-icons/md";
 import { postRegister } from "../../api/axios_api";
 import toast from "react-hot-toast";
 
 import { LuEye, LuEyeClosed } from "react-icons/lu";
+import Context from "../../Context";
 const Register = () => {
   const navigateTo = useNavigate();
-
+  const { setIsAuthenticated } = useContext(Context);
   const [form, setForm] = useState({
     username: "",
     email: "",
@@ -44,7 +45,8 @@ const Register = () => {
         toast.success(res?.data?.message || "Registration Successful");
         setForm({ username: "", email: "", password: "" });
         setAgree(false);
-        navigateTo("/app/login");
+        setIsAuthenticated(true)
+        navigateTo("/app/profile");
       }
     } catch (err) {
       console.log(err);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext } from "react";
 import { getProfile, logoutUser } from "../../api/axios_api";
 import Context from "../../Context";
 import { useNavigate } from "react-router-dom";
@@ -14,11 +14,12 @@ const Profile = () => {
     const fetchProfile = async () => {
       try {
         const res = await getProfile();
+        console.log(res);
         if (res.status === 200) {
           setUser(res.data.user);
           toast.success("Welcome to Profile Page", { id: "profile-toast" });
         }
-      // eslint-disable-next-line no-unused-vars
+        // eslint-disable-next-line no-unused-vars
       } catch (err) {
         toast.error("Please Login to Access", { id: "auth-error" });
         navigate("/app/login");
