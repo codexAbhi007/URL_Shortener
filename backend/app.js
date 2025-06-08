@@ -1,7 +1,9 @@
 import express from "express"
+import cors from 'cors'
+import requestIp from "request-ip"
+
 import "dotenv/config";
 import { urlRoutes } from "./routes/urLRoutes.js";
-import cors from 'cors'
 import { authRoutes } from "./routes/authRoutes.js";
 import cookieParser from "cookie-parser";
 // import { verifyAuthentication } from "./middlewares/verify-auth-middleware.js";
@@ -20,6 +22,7 @@ app.use(
 app.use(cookieParser())
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json());
+app.use(requestIp.mw())
 app.use('/shorten',urlRoutes)
 app.use('/app',authRoutes)
 export default app;

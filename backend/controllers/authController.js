@@ -1,35 +1,12 @@
-import { z } from "zod";
+import { eq } from "drizzle-orm";
+import { db } from "../config/drizzleDB.js";
+import { usersTable } from "../models/drizzleSchema.js";
 import {
   usernameSchema,
   emailSchema,
   passwordSchema,
 } from "../models/zodPassSchema.js";
 import * as AuthService from "../services/auth.services.js";
-
-// export const postRegister = async (req, res) => {
-//   console.log(req.body);
-//   const { username, email, password } = req.body;
-
-//   const userExists = await AuthService.getUserByEmail(email);
-//   console.log(userExists);
-
-//   if (userExists) {
-//     return res
-//       .status(409)
-//       .json({ message: "User already exists! Sign In Instead" });
-//   }
-
-//   const generatedHash = await AuthService.generateHash(password);
-//   console.log(generatedHash);
-//   const [user] = await AuthService.createUser({
-//     username,
-//     email,
-//     password: generatedHash,
-//   });
-//   console.log(user);
-
-//   return res.status(201).json({ message: "Registration successful", user });
-// };
 
 export const postRegister = async (req, res) => {
   try {
@@ -65,15 +42,54 @@ export const postRegister = async (req, res) => {
         .json({ message: "User already exists! Sign In instead." });
     }
 
-    // Create user
     const hashedPassword = await AuthService.generateHash(password);
-    const [user] = await AuthService.createUser({
+
+    // Create user
+
+    await AuthService.createUser({
       username,
       email,
       password: hashedPassword,
     });
 
-    return res.status(201).json({ message: "Registration successful", user });
+    const user = await AuthService.getUserByEmail(email)
+    // console.log(user)
+    const session = await AuthService.createSession(user.id, {
+      ip: req.clientIp,
+      userAgent: req.headers["user-agent"],
+    });
+
+    const accessToken = AuthService.createAccessToken({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      sessionId: session.id,
+    });
+    const refreshToken = AuthService.createRefreshToken(session.id);
+
+    res
+      .status(201)
+      .cookie("accessToken", accessToken, {
+        expires: new Date(
+          Date.now() + process.env.ACCESS_TOKEN_COOKIE_EXPIRE * 60 * 100
+        ),
+        httpOnly: true,
+        secure: true,
+      })
+      .cookie("refreshToken", refreshToken, {
+        expires: new Date(
+          Date.now() +
+            process.env.REFRESH_TOKEN_COOKIE_EXPIRE * 24 * 60 * 60 * 1000
+        ),
+        httpOnly: true,
+        secure: true,
+      })
+      .json({
+        message: "Resgistration Successful",
+        accessToken,
+        refreshToken,
+        user,
+      });
   } catch (error) {
     console.error("Registration error:", error);
     return res.status(500).json({
@@ -85,7 +101,6 @@ export const postRegister = async (req, res) => {
 export const postLogin = async (req, res) => {
   const { email, password } = req.body;
   const user = await AuthService.getUserByEmail(email);
-  // console.log(user);
   if (!user) {
     return res
       .status(409)
@@ -98,46 +113,92 @@ export const postLogin = async (req, res) => {
     return res.status(401).json({ message: "Invalid password" });
   }
 
-  // res.cookie("isLoggedIn", "true");
+  const session = await AuthService.createSession(user.id, {
+    ip: req.clientIp,
+    userAgent: req.headers["user-agent"],
+  });
 
-  const token = AuthService.generateToken({
+  const accessToken = AuthService.createAccessToken({
     id: user.id,
     username: user.username,
     email: user.email,
+    sessionId: session.id,
   });
+  const refreshToken = AuthService.createRefreshToken(session.id);
 
-  return res
+  res
     .status(201)
-    .cookie("access_token", token, {
+    .cookie("accessToken", accessToken, {
       expires: new Date(
-        Date.now() + process.env.COOKIE_EXPIRE * 24 * 60 * 60 * 1000
+        Date.now() + process.env.ACCESS_TOKEN_COOKIE_EXPIRE * 60 * 100
       ),
       httpOnly: true,
+      secure: true,
+    })
+    .cookie("refreshToken", refreshToken, {
+      expires: new Date(
+        Date.now() +
+          process.env.REFRESH_TOKEN_COOKIE_EXPIRE * 24 * 60 * 60 * 1000
+      ),
+      httpOnly: true,
+      secure: true,
     })
     .json({
-      message: "Login successful",
-      token,
+      message: "Login Successful",
+      accessToken,
+      refreshToken,
       user,
     });
-  // res.cookie("access_token",token,{
-  //   httpOnly: true,
-  //   secure: process.env.NODE_ENV === "production",
-  //   sameSite: "strict",
-  //   maxAge: 3600000
-  // })
+  // return res
+  //   .status(201)
+  //   .cookie("access_token", token, {
+  //     expires: new Date(
+  //       Date.now() + process.env.COOKIE_EXPIRE * 24 * 60 * 60 * 1000
+  //     ),
+  //     httpOnly: true,
+  //   })
+  //   .json({
+  //     message: "Login successful",
+  //     token,
+  //     user,
+  //   });
 };
 
+// export const logout = async (req, res) => {
+//   res
+//     .status(200)
+//     .cookie("access_token", "", {
+//       expires: new Date(Date.now()),
+//       httpOnly: true,
+//     })
+//     .json({
+//       success: true,
+//       message: "Logged Out Successfully",
+//     });
+// };
+
 export const logout = async (req, res) => {
-  res
-    .status(200)
-    .cookie("access_token", "", {
-      expires: new Date(Date.now()),
-      httpOnly: true,
-    })
-    .json({
-      success: true,
-      message: "Logged Out Successfully",
-    });
+  try {
+    await AuthService.clearSession(req.user.sessionId);
+
+    res
+      .cookie("accessToken", "", {
+        expires: new Date(Date.now()),
+        httpOnly: true,
+        secure: true,
+      })
+      .cookie("refreshToken", "", {
+        expires: new Date(Date.now()),
+        httpOnly: true,
+        secure: true,
+      })
+      .json({
+        success: true,
+        message: "Logged out Successfully",
+      });
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 // controllers/auth.controller.js
