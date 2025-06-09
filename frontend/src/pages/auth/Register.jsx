@@ -1,7 +1,8 @@
-import React, { useContext, useState } from "react";
+import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { MdLogin } from "react-icons/md";
-import { postRegister } from "../../api/axios_api";
+import { generateEmail, postRegister } from "../../api/axios_api";
+import { IoMdSend } from "react-icons/io";
 import toast from "react-hot-toast";
 
 import { LuEye, LuEyeClosed } from "react-icons/lu";
@@ -45,15 +46,42 @@ const Register = () => {
         toast.success(res?.data?.message || "Registration Successful");
         setForm({ username: "", email: "", password: "" });
         setAgree(false);
-        setIsAuthenticated(true)
+        setIsAuthenticated(true);
         navigateTo("/app/profile");
       }
     } catch (err) {
-      console.log(err);
       toast.error(
         err.response?.data?.error ||
           err.response?.data?.message ||
           "Registration failed. Try again."
+      );
+    }
+  };
+
+  const handleVerify = async () => {
+    if (!form.username || !form.email || !form.password) {
+      toast.error("Please fill the form first!");
+      return
+    }
+    if(!agree){
+      toast.error("You must Accept our terms and conditions")
+      return
+    }
+    try {
+      const res = await generateEmail(form);
+      console.log(res)
+       if (res.status === 200) {
+        toast.success(res?.data?.message || "Verification Code Sent");
+        setForm({ username: "", email: "", password: "" });
+        setAgree(false);
+        setIsAuthenticated(true);
+        navigateTo(`/app/email/verify?email=${res.data.user.email}&id=${res.data.user.id}`);
+      }
+    } catch (err) {
+      toast.error(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Request failed. Try again."
       );
     }
   };
@@ -87,9 +115,19 @@ const Register = () => {
                 value={form.email}
                 onChange={handleChange}
                 required
-                className="bg-white mt-2 w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-white mt-2 w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               />
             </label>
+            <div className="mt-4 ">
+              <button
+                type="button"
+                className="flex items-center justify-center gap-2 bg-blue-600 px-2 py-1 rounded-lg text-10px text-white hover:cursor-pointer hover:scale-101 transition-all ease-in-out "
+                onClick={handleVerify}
+              >
+                <p>Verify Email </p>
+                <IoMdSend size={18} />
+              </button>
+            </div>
           </div>
 
           <div className="mb-4 relative">
@@ -130,7 +168,7 @@ const Register = () => {
 
           <button
             type="submit"
-            className="w-full py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition flex justify-center items-center gap-2"
+            className="w-full py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 flex justify-center items-center gap-2  hover:cursor-pointer hover:scale-101 transition-all ease-in-out "
           >
             <MdLogin className="text-xl" />
             Create Account

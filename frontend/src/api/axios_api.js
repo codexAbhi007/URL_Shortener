@@ -19,3 +19,12 @@ export const deleteShortLink = (code) => {
 export const updateShortCode = (code, { originalUrl, newCode }) => {
   return API.patch(`/shorten/${code}`, { originalUrl, newCode });
 };
+
+export const generateEmail = (data)=> API.post(`/app/email/generate`,data);
+export const verifyEmail = ({id,userCode})=>{
+  return API.post(`/app/email/verify`,{id,userCode})
+}
+
+export const generateEmailAfterLogin = ({id,email})=>{
+  return API.post(`/app/profile/email/generate`,{id,email})
+}

@@ -1,5 +1,9 @@
 import { useEffect, useState, useContext } from "react";
-import { getProfile, logoutUser } from "../../api/axios_api";
+import {
+  generateEmailAfterLogin,
+  getProfile,
+  logoutUser,
+} from "../../api/axios_api";
 import Context from "../../Context";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -7,9 +11,11 @@ import { MdModeEdit } from "react-icons/md";
 import { IoKeySharp } from "react-icons/io5";
 import { CgLogOut } from "react-icons/cg";
 import { IoMail } from "react-icons/io5";
+import { MdCheckCircle, MdCancel } from "react-icons/md";
+import { IoMdSend } from "react-icons/io";
 const Profile = () => {
   const [user, setUser] = useState(null);
-
+  const navigateTo = useNavigate();
   const { setIsAuthenticated, setUser: setGlobalUser } = useContext(Context);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -20,7 +26,7 @@ const Profile = () => {
         const res = await getProfile();
         if (res.status === 200) {
           setUser(res.data.user);
-          console.log(res.data)
+          console.log(res.data);
           toast.success("Welcome to Profile Page", { id: "profile-toast" });
         }
       } catch (err) {
@@ -49,6 +55,25 @@ const Profile = () => {
     }
   };
 
+  const handleVerify = async () => {
+    try {
+      const res = await generateEmailAfterLogin({id:user.id,email:user.email});
+      console.log(res);
+      if (res.status === 200) {
+        toast.success(res?.data?.message || "Verification code sent");
+
+        navigateTo(`/app/email/verify?email=${user.email}&id=${user.id}`);
+      }
+    } catch (err) {
+      console.log(err)
+      toast.error(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Request failed. Try again."
+      );
+    }
+  };
+
   if (loading) {
     return (
       <div className="grid place-items-center">
@@ -69,7 +94,29 @@ const Profile = () => {
         <h2 className="text-xl font-bold text-gray-800 mb-1">
           {user.username}
         </h2>
-        <div>{user.verified == false ? "Not verified" : "Verified"}</div>
+        <div className="flex items-center justify-center gap-2">
+          {user.verified === false ? (
+            <div className="flex gap-4">
+              <span className="text-red-800 font-medium flex items-center gap-1 bg-red-200 rounded-xl px-2">
+                <MdCancel className="text-lg" />
+                Not Verified
+              </span>
+              <button
+                type="button"
+                onClick={handleVerify}
+                className="flex items-center justify-center gap-2 bg-blue-600 px-2 py-1 rounded-lg text-10px text-white hover:cursor-pointer hover:scale-101 transition-all ease-in-out "
+              >
+                <p>Verify Email </p>
+                <IoMdSend size={18} />
+              </button>
+            </div>
+          ) : (
+            <span className="text-green-800 font-medium flex items-center gap-1 bg-green-200 rounded-xl px-2">
+              <MdCheckCircle className="text-lg" />
+              Verified
+            </span>
+          )}
+        </div>
         <div className="flex w-full items-center justify-center gap-2">
           <IoMail size={18} />
           <p className="text-gray-600">{user.email}</p>

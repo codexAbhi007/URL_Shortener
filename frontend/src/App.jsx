@@ -12,6 +12,7 @@ import Context from "./Context.jsx";
 
 import { getProfile } from "./api/axios_api.js";
 import UpdateLink from "./pages/UpdateLink.jsx";
+import Verification from "./pages/auth/Verification.jsx";
 
 const router = createBrowserRouter([
   {
@@ -24,7 +25,8 @@ const router = createBrowserRouter([
       { path: "/app/register", element: <Register /> },
       { path: "/app/login", element: <Login /> },
       { path: "/app/profile", element: <Profile /> },
-      {path: "/shorten/update",element: <UpdateLink/>}
+      {path: "/shorten/update",element: <UpdateLink/>},
+      {path:"/app/email/verify",element: <Verification/>}
     ],
   },
 ]);
