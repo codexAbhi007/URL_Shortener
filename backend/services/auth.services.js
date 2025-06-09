@@ -1,6 +1,10 @@
 import { eq } from "drizzle-orm";
 import { db } from "../config/drizzleDB.js";
-import { sessionsTable, usersTable } from "../models/drizzleSchema.js";
+import {
+  sessionsTable,
+  usersTable,
+  verifyEmailTokensTable,
+} from "../models/drizzleSchema.js";
 import argon2 from "argon2";
 import jwt from "jsonwebtoken";
 
@@ -102,7 +106,7 @@ export const refreshTokens = async (refreshToken) => {
     const new_accessToken = createAccessToken(userInfo);
     const new_refreshToken = createRefreshToken(currentSession.id);
     // console.log(new_accessToken, new_refreshToken);
-  
+
     return {
       new_accessToken,
       new_refreshToken,
@@ -115,4 +119,20 @@ export const refreshTokens = async (refreshToken) => {
 
 export const clearSession = async (sessionId) => {
   return db.delete(sessionsTable).where(eq(sessionsTable.id, sessionId));
+};
+
+export const generateRandomSixDigitCode = () => {
+  const firstDigit = Math.floor(Math.random() * 9) + 1; // 1-9
+  const remainingDigits = Math.floor(Math.random() * 100000) // 0 - 99999
+    .toString()
+    .padStart(5, "0"); // ensure it’s always 5 digits
+
+  return parseInt(firstDigit + remainingDigits); // e.g. 100001 to 999999
+};
+
+export const setTokenDB = async ({ token, userId, createdAt, expiresAt }) => {
+  return await db
+    .insert(verifyEmailTokensTable)
+    .values({ userId, token, expiresAt, createdAt })
+    .$returningId();
 };

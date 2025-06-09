@@ -18,7 +18,8 @@
     "argon2": "^0.43.0",
     "drizzle-orm": "^0.44.2",
     "jsonwebtoken": "^9.0.2",
-    "mysql2": "^3.14.1"
+    "mysql2": "^3.14.1",
+    "nodemailer": "^7.0.3"
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.1"

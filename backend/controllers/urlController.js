@@ -132,50 +132,6 @@ export const deleteURL = async (req, res) => {
 };
 
 
-
-// PATCH /shorten/:code
-// export const updateShortCode = async (req, res) => {
-//   try {
-//     console.log("hello")
-//     const userId = req.user?.id;
-//     const { code } = req.params;
-//     const { OriginalUrl,newCode } = req.body;
-//     console.log(code,newCode)
-//     if (!userId) return res.status(401).json({ message: "Unauthorized" });
-//     if (!newCode || newCode.trim() === "") {
-//       return res.status(400).json({ message: "New code cannot be empty" });
-//     }
-
-//     // Check if new code already exists
-//     const existing = await db
-//       .select()
-//       .from(shortLinksTable)
-//       .where(eq(shortLinksTable.shortCode, newCode));
-//     console.log(existing)
-//     if (existing.length > 0) {
-//       return res.status(409).json({ message: "Short code already taken" });
-//     }
-
-//     // Update the shortCode
-//     const updated = await db
-//       .update(shortLinksTable)
-//       .set({ shortCode: newCode })
-//       .where(and(eq(shortLinksTable.shortCode, code), eq(shortLinksTable.userId, userId)));
-
-//     console.log(updated)
-
-//     if (updated[0].affectedRows === 0) {
-//       return res.status(404).json({ message: "Short URL not found or not authorized" });
-//     }
-
-//     res.status(200).json({ message: "Short code updated successfully", shortCode: newCode });
-//   } catch (err) {
-//     console.log("Error updating short code:", err);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
-
 const isValidUrl = (url) => {
   try {
     new URL(url);

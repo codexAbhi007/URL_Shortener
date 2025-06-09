@@ -13,6 +13,7 @@ export const usersTable = mysqlTable("users", {
   username: varchar("username", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
+  verified: boolean("is_email_verified").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
@@ -39,6 +40,17 @@ export const sessionsTable = mysqlTable("sessions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
+
+
+export const verifyEmailTokensTable = mysqlTable("is_email_valid",{
+  id: int().autoincrement().primaryKey(),
+  userId: int("user_id").notNull().references(()=> usersTable.id, {onDelete:"cascade"}),
+  token: varchar("token",{length: 6}).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}) 
+
+
 
 export const usersRelations = relations(usersTable, ({ many }) => ({
   links: many(shortLinksTable),

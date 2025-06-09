@@ -1,12 +1,12 @@
-import { eq } from "drizzle-orm";
-import { db } from "../config/drizzleDB.js";
-import { usersTable } from "../models/drizzleSchema.js";
 import {
   usernameSchema,
   emailSchema,
   passwordSchema,
 } from "../models/zodPassSchema.js";
 import * as AuthService from "../services/auth.services.js";
+import { sendEmail } from "../services/sendEmail.js";
+import { getAllLinks } from "../services/url.services.js";
+import { generateEmailTemplate } from "../templates/emailTemplate.js";
 
 export const postRegister = async (req, res) => {
   try {
@@ -52,7 +52,7 @@ export const postRegister = async (req, res) => {
       password: hashedPassword,
     });
 
-    const user = await AuthService.getUserByEmail(email)
+    const user = await AuthService.getUserByEmail(email);
     // console.log(user)
     const session = await AuthService.createSession(user.id, {
       ip: req.clientIp,
@@ -164,19 +164,6 @@ export const postLogin = async (req, res) => {
   //   });
 };
 
-// export const logout = async (req, res) => {
-//   res
-//     .status(200)
-//     .cookie("access_token", "", {
-//       expires: new Date(Date.now()),
-//       httpOnly: true,
-//     })
-//     .json({
-//       success: true,
-//       message: "Logged Out Successfully",
-//     });
-// };
-
 export const logout = async (req, res) => {
   try {
     await AuthService.clearSession(req.user.sessionId);
@@ -202,10 +189,128 @@ export const logout = async (req, res) => {
 };
 
 // controllers/auth.controller.js
-export const getProfile = (req, res) => {
-  const { id, username, email } = req.user;
+export const getProfile = async (req, res) => {
+  const { id } = req.user;
+
+  const user = await AuthService.findUserById(id);
+
+  const shortLinks = await getAllLinks(id);
+
   return res.status(200).json({
     message: "User profile fetched successfully",
-    user: { id, username, email },
+    user: {
+      id,
+      username: user.username,
+      email: user.email,
+      createdAt: user.createdAt,
+      links: shortLinks.length,
+      verified: user.verified,
+    },
   });
+};
+
+export const generateCode = async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+
+    // Step-by-step validation with Zod
+    const usernameResult = usernameSchema.safeParse(username);
+    if (!usernameResult.success) {
+      return res
+        .status(400)
+        .json({ message: usernameResult.error.errors[0].message });
+    }
+
+    const emailResult = emailSchema.safeParse(email);
+    if (!emailResult.success) {
+      return res
+        .status(400)
+        .json({ message: emailResult.error.errors[0].message });
+    }
+
+    const passwordResult = passwordSchema.safeParse(password);
+    if (!passwordResult.success) {
+      return res
+        .status(400)
+        .json({ message: passwordResult.error.errors[0].message });
+    }
+
+    // Check if user already exists
+    const userExists = await AuthService.getUserByEmail(email);
+    if (userExists) {
+      return res
+        .status(409)
+        .json({ message: "User already exists! Sign In instead." });
+    }
+
+    const hashedPassword = await AuthService.generateHash(password);
+
+    // Create user
+
+    await AuthService.createUser({
+      username,
+      email,
+      password: hashedPassword,
+    });
+
+    const user = await AuthService.getUserByEmail(email);
+    // console.log(user)
+    const session = await AuthService.createSession(user.id, {
+      ip: req.clientIp,
+      userAgent: req.headers["user-agent"],
+    });
+
+    const accessToken = AuthService.createAccessToken({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      sessionId: session.id,
+    });
+    const refreshToken = AuthService.createRefreshToken(session.id);
+
+    res
+      .status(201)
+      .cookie("accessToken", accessToken, {
+        expires: new Date(
+          Date.now() + process.env.ACCESS_TOKEN_COOKIE_EXPIRE * 60 * 100
+        ),
+        httpOnly: true,
+        secure: true,
+      })
+      .cookie("refreshToken", refreshToken, {
+        expires: new Date(
+          Date.now() +
+            process.env.REFRESH_TOKEN_COOKIE_EXPIRE * 24 * 60 * 60 * 1000
+        ),
+        httpOnly: true,
+        secure: true,
+      });
+
+    const verificationCode =
+      AuthService.generateRandomSixDigitCode().toString();
+    console.log(verificationCode);
+    console.log("hello");
+  
+    const createdAt = new Date(Date.now());
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    const tableId = await AuthService.setTokenDB({
+      token: verificationCode,
+      userId: user.id,
+      createdAt,
+      expiresAt,
+    });
+
+    const message = generateEmailTemplate(verificationCode);
+    sendEmail({ email:user.email, subject: "Your Verification Code", message });
+
+    res.status(200).json({
+        success: true,
+        message: `Verification email sent successfully to ${user.email}`,
+      });
+  } catch (error) {
+    console.error("Registration error:", error);
+    return res.status(500).json({
+      message: "Something went wrong while Sending Code. Please try again.",
+    });
+  }
 };
