@@ -290,10 +290,10 @@ export const generateCode = async (req, res) => {
       AuthService.generateRandomSixDigitCode().toString();
     console.log(verificationCode);
     console.log("hello");
-  
+
     const createdAt = new Date(Date.now());
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-    const tableId = await AuthService.setTokenDB({
+    await AuthService.setTokenDB({
       token: verificationCode,
       userId: user.id,
       createdAt,
@@ -301,16 +301,88 @@ export const generateCode = async (req, res) => {
     });
 
     const message = generateEmailTemplate(verificationCode);
-    sendEmail({ email:user.email, subject: "Your Verification Code", message });
+    sendEmail({
+      email: user.email,
+      subject: "Your Verification Code",
+      message,
+    });
 
     res.status(200).json({
-        success: true,
-        message: `Verification email sent successfully to ${user.email}`,
-      });
+      success: true,
+      message: `Verification email sent successfully to ${user.email}`,
+      user,
+    });
   } catch (error) {
     console.error("Registration error:", error);
     return res.status(500).json({
       message: "Something went wrong while Sending Code. Please try again.",
+    });
+  }
+};
+
+export const verifyEmail = async (req, res) => {
+  try {
+    const { id, userCode } = req.body;
+    const [userEntry] = await AuthService.getTokenById(id);
+    console.log(userEntry);
+    console.log(userEntry.token);
+    if (!userEntry) return res.status(401).json({ message: "No user Found!" });
+    if (Number(userEntry.token) !== Number(userCode))
+      return res.status(401).json({ message: "Invalid OTP" });
+
+    const currentTime = Date.now();
+    const verificationCodeExpire = new Date(userEntry.expiresAt).getTime();
+
+    // console.log(currentTime,verificationCodeExpire)
+    // console.log(currentTime > verificationCodeExpire)
+    console.log("hello");
+    if (currentTime > verificationCodeExpire) {
+      return res.status(400).json({ message: "OTP Expired" });
+    }
+
+    const user = await AuthService.updateUserVerification(id);
+    console.log(user);
+
+    res.json({ message: true, message: "Email Verified!" });
+  } catch (err) {
+    return res.status(500).json({
+      message: "Something went wrong!",
+    });
+  }
+};
+
+export const generateEmailAfterLogin = async (req, res) => {
+  const { id, email } = req.body;
+  try {
+    const verificationCode =
+      AuthService.generateRandomSixDigitCode().toString();
+    console.log(verificationCode);
+    console.log("hello");
+
+    const createdAt = new Date(Date.now());
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    const tableId = await AuthService.setTokenDB({
+      token: verificationCode,
+      userId: id,
+      createdAt,
+      expiresAt,
+    });
+
+    const message = generateEmailTemplate(verificationCode);
+    sendEmail({
+      email: email,
+      subject: "Your Verification Code",
+      message,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Verification email sent successfully to ${email}`,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Something went wrong!",
     });
   }
 };

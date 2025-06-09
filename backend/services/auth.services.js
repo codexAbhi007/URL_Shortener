@@ -1,11 +1,11 @@
-import { eq } from "drizzle-orm";
+import { desc, eq, lt } from "drizzle-orm";
 import { db } from "../config/drizzleDB.js";
 import {
   sessionsTable,
   usersTable,
   verifyEmailTokensTable,
 } from "../models/drizzleSchema.js";
-import argon2 from "argon2";
+import argon2, { verify } from "argon2";
 import jwt from "jsonwebtoken";
 
 export const getUserByEmail = async (email) => {
@@ -130,9 +130,47 @@ export const generateRandomSixDigitCode = () => {
   return parseInt(firstDigit + remainingDigits); // e.g. 100001 to 999999
 };
 
+// export const setTokenDB = async ({ token, userId, createdAt, expiresAt }) => {
+//   return await db
+//     .insert(verifyEmailTokensTable)
+//     .values({ userId, token, expiresAt, createdAt })
+//     .$returningId();
+// };
+
 export const setTokenDB = async ({ token, userId, createdAt, expiresAt }) => {
+  return db.transaction(async (tx) => {
+    try {
+      await tx
+        .delete(verifyEmailTokensTable)
+        .where(lt(verifyEmailTokensTable.expiresAt, new Date()));
+
+      await tx
+        .delete(verifyEmailTokensTable)
+        .where(eq(verifyEmailTokensTable.userId, userId));
+
+      await tx
+        .insert(verifyEmailTokensTable)
+        .values({ userId, token, expiresAt, createdAt });
+    } catch (err) {
+      console.log(err);
+      throw new Error("Unable to create Token");
+    }
+  });
+};
+
+export const getTokenById = async (id) => {
+  const tokenEntry = await db
+    .select()
+    .from(verifyEmailTokensTable)
+    .where(eq(verifyEmailTokensTable.userId, id))
+    .orderBy(desc(verifyEmailTokensTable.createdAt));
+
+  return tokenEntry;
+};
+
+export const updateUserVerification = async (id) => {
   return await db
-    .insert(verifyEmailTokensTable)
-    .values({ userId, token, expiresAt, createdAt })
-    .$returningId();
+    .update(usersTable)
+    .set({ verified: true })
+    .where(eq(usersTable.id, id));
 };

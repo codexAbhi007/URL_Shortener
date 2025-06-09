@@ -41,16 +41,15 @@ export const sessionsTable = mysqlTable("sessions", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
-
-export const verifyEmailTokensTable = mysqlTable("is_email_valid",{
+export const verifyEmailTokensTable = mysqlTable("is_email_valid", {
   id: int().autoincrement().primaryKey(),
-  userId: int("user_id").notNull().references(()=> usersTable.id, {onDelete:"cascade"}),
-  token: varchar("token",{length: 6}).notNull(),
+  userId: int("user_id")
+    .notNull()
+    .references(() => usersTable.id, { onDelete: "cascade" }),
+  token: varchar("token", { length: 6 }).notNull(),
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-}) 
-
-
+});
 
 export const usersRelations = relations(usersTable, ({ many }) => ({
   links: many(shortLinksTable),
