@@ -1,3 +1,4 @@
+import { decodeIdToken, generateCodeVerifier, generateState } from "arctic";
 import {
   usernameSchema,
   emailSchema,
@@ -7,6 +8,7 @@ import * as AuthService from "../services/auth.services.js";
 import { sendEmail } from "../services/sendEmail.js";
 import { getAllLinks } from "../services/url.services.js";
 import { generateEmailTemplate } from "../templates/emailTemplate.js";
+import { google } from "../lib/oauth/google.js";
 
 export const postRegister = async (req, res) => {
   try {
@@ -105,6 +107,11 @@ export const postLogin = async (req, res) => {
     return res
       .status(409)
       .json({ message: "User does not Exists! Register First" });
+  }
+
+
+  if(!user.password){
+    return res.status(409).json({message: `You have already created Account with email ${email} using social Login, Please Login with your social account`})
   }
 
   const compare = await AuthService.comparePass(password, user.password);
@@ -385,4 +392,112 @@ export const generateEmailAfterLogin = async (req, res) => {
       message: "Something went wrong!",
     });
   }
+};
+
+//getGoogleLoginPage
+export const getGoogleLoginPage = async (req, res) => {
+  console.log("hello");
+  if (req.user) return res.status(200).json({ message: true, user: req.user });
+
+  const state = generateState();
+  const codeVerifier = generateCodeVerifier();
+  const url = google.createAuthorizationURL(state, codeVerifier, [
+    "openid",
+    "profile",
+    "email",
+  ]);
+
+  const cookieConfig = {
+    httpOnly: true,
+    secure: true,
+    expires: new Date(Date.now() + 5 * 60 * 1000),
+    sameSite: "lax",
+  };
+
+  res
+    .cookie("google_oauth_state", state, cookieConfig)
+    .cookie("google_code_verifier", codeVerifier, cookieConfig);
+  res.redirect(url.toString());
+};
+
+export const getGoogleLoginCallback = async (req, res) => {
+  const { code, state } = req.query;
+  console.log(code, state);
+
+  const {
+    google_oauth_state: storedState,
+    google_code_verifier: codeVerifier,
+  } = req.cookies;
+
+  if (!code || !state || !storedState || !codeVerifier) {
+    res.status(401).json({ message: "Server Error" });
+    res.redirect("http://localhost:5173/app/login");
+  }
+
+  let tokens;
+  try {
+    tokens = await google.validateAuthorizationCode(code, codeVerifier);
+  } catch (error) {
+    console.log(error);
+    return res.redirect("http://localhost:5173/app/login");
+  }
+
+  console.log("token google: ", tokens);
+
+  const claims = decodeIdToken(tokens.idToken());
+  const { sub: googleuserId, username, email } = claims;
+
+  let user = await AuthService.getUserWithOauthId({
+    provider: "google",
+    email,
+  });
+
+  if (user && !user.providerAccountId) {
+    await AuthService.linkUserwithOauth({
+      user: user.id,
+      provider: "google",
+      providerAccountId: googleuserId,
+    });
+  }
+
+  if (!user) {
+    user = await AuthService.createUserWithOauth({
+      username,
+      email,
+      provider: "google",
+      providerAccountId: googleuserId,
+    });
+  }
+
+  const session = await AuthService.createSession(user.id, {
+    ip: req.clientIp,
+    userAgent: req.headers["user-agent"],
+  });
+
+  const accessToken = AuthService.createAccessToken({
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    sessionId: session.id,
+  });
+  const refreshToken = AuthService.createRefreshToken(session.id);
+
+  return res
+    .status(201)
+    .cookie("accessToken", accessToken, {
+      expires: new Date(
+        Date.now() + process.env.ACCESS_TOKEN_COOKIE_EXPIRE * 60 * 100
+      ),
+      httpOnly: true,
+      secure: true,
+    })
+    .cookie("refreshToken", refreshToken, {
+      expires: new Date(
+        Date.now() +
+          process.env.REFRESH_TOKEN_COOKIE_EXPIRE * 24 * 60 * 60 * 1000
+      ),
+      httpOnly: true,
+      secure: true,
+    })
+    .redirect("http://localhost:5173/app/profile")
 };

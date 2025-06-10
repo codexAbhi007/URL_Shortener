@@ -6,6 +6,7 @@ import "dotenv/config";
 import { urlRoutes } from "./routes/urLRoutes.js";
 import { authRoutes } from "./routes/authRoutes.js";
 import cookieParser from "cookie-parser";
+import { googleRoutes } from "./routes/googleRoutes.js";
 // import { verifyAuthentication } from "./middlewares/verify-auth-middleware.js";
 
 
@@ -23,6 +24,7 @@ app.use(cookieParser())
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json());
 app.use(requestIp.mw())
+app.use("/",googleRoutes)
 app.use('/shorten',urlRoutes)
 app.use('/app',authRoutes)
 export default app;

@@ -1,6 +1,7 @@
-import { desc, eq, lt } from "drizzle-orm";
+import { and, desc, eq, lt } from "drizzle-orm";
 import { db } from "../config/drizzleDB.js";
 import {
+  oauthAccountsTable,
   sessionsTable,
   usersTable,
   verifyEmailTokensTable,
@@ -174,3 +175,66 @@ export const updateUserVerification = async (id) => {
     .set({ verified: true })
     .where(eq(usersTable.id, id));
 };
+
+export async function getUserWithOauthId({ email, provider }) {
+  const [user] = await db
+    .select({
+      id: usersTable.id,
+      username: usersTable.username,
+      email: usersTable.email,
+      verified: usersTable.verified,
+      providerAccountId: oauthAccountsTable.providerAccountId,
+      provider: oauthAccountsTable.provider,
+    })
+    .from(usersTable)
+    .where(eq(usersTable.email, email))
+    .leftJoin(
+      oauthAccountsTable,
+      and(
+        eq(oauthAccountsTable.provider, provider),
+        eq(oauthAccountsTable.userId, usersTable.id)
+      )
+    );
+  return user;
+}
+
+export async function linkUserwithOauth({
+  userId,
+  provider,
+  providerAccountId,
+}) {
+  await db.insert(oauthAccountsTable).values({
+    userId,
+    provider,
+    providerAccountId,
+  });
+}
+
+export async function createUserWithOauth({
+  username,
+  email,
+  provider,
+  providerAccountId,
+}) {
+  const fallbackUsername = username || email.split('@')[0];
+  const user = await db.transaction(async (trx) => {
+    const [user] = await trx
+      .insert(usersTable)
+      .values({ username: fallbackUsername,email, password: "", verified: true })
+      .$returningId();
+
+    await trx.insert(oauthAccountsTable).values({
+      provider,providerAccountId,userId:user.id,
+    })
+
+    return{
+      id: user.id,
+      username,
+      verified: true,
+      provider,
+      providerAccountId
+    }
+  });
+
+  return user;
+}
