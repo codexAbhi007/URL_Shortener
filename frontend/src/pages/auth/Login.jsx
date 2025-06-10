@@ -2,9 +2,12 @@ import React, { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { MdLogin } from "react-icons/md";
 import { LuEye, LuEyeClosed } from "react-icons/lu";
+import { FcGoogle } from "react-icons/fc";
+import { FaGithub } from "react-icons/fa";
 import { postLogin } from "../../api/axios_api";
 import Context from "../../Context";
 import toast from "react-hot-toast";
+
 
 const Login = () => {
   const { setIsAuthenticated, setUser } = useContext(Context);
@@ -45,6 +48,14 @@ const Login = () => {
           err.response?.data?.message ||
           "Login failed. Try again."
       );
+    }
+  };
+
+  const handleGoogle = async () => {
+    try {
+      window.location.href = "http://localhost:3000/google";
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -100,12 +111,37 @@ const Login = () => {
 
           <button
             type="submit"
-            className="w-full py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition flex justify-center items-center gap-2"
+            className="w-full py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 hover:cursor-pointer transition flex justify-center items-center gap-2"
           >
             <MdLogin className="text-xl" />
             Sign In
           </button>
         </form>
+
+        {/* Divider */}
+        <div className="my-2 flex items-center justify-center gap-2">
+          <div className="border-t border-gray-300 w-full"></div>
+          <span className="text-gray-500 text-sm">OR</span>
+          <div className="border-t border-gray-300 w-full"></div>
+        </div>
+
+        {/* OAuth Buttons */}
+        <div className="flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={handleGoogle}
+            className=" bg-gray-100 text-white border-white-800 p-1 rounded-full hover:bg-white transition-all hover:scale-102 ease-in-out hover:cursor-pointer"
+          >
+            <FcGoogle className="text-2xl" />
+          </button>
+
+          <button
+            type="button"
+            className=" bg-gray-600 text-white border-gray-800 p-1 rounded-full hover:bg-gray-800 transition-all hover:scale-102 ease-in-out hover:cursor-pointer"
+          >
+            <FaGithub className="text-2xl" />
+          </button>
+        </div>
 
         <div className="mt-6 text-center text-sm">
           Don&apos;t have an account?{" "}
