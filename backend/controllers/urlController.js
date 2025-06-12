@@ -104,7 +104,7 @@ export const getAllUrls = async (req, res) => {
     res.status(200).json(urls);
   } catch (error) {
     console.error("Error fetching URLs:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
